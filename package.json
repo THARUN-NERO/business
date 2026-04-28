@@ -1,0 +1,55 @@
+{
+  "name": "cashclaw",
+  "version": "1.6.2",
+  "description": "Turn your OpenClaw AI agent into a money-making machine — 12 skills, audit trails, security hardened",
+  "type": "module",
+  "bin": {
+    "cashclaw": "./bin/cashclaw.js"
+  },
+  "main": "./src/cli/index.js",
+  "scripts": {
+    "start": "node bin/cashclaw.js",
+    "test": "node --test tests/cli.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "inquirer": "^9.0.0",
+    "chalk": "^5.0.0",
+    "ora": "^8.0.0",
+    "stripe": "^17.0.0",
+    "express": "^4.21.0",
+    "open": "^10.0.0",
+    "uuid": "^10.0.0",
+    "fs-extra": "^11.0.0",
+    "dayjs": "^1.11.0",
+    "boxen": "^8.0.0",
+    "cli-table3": "^0.6.0"
+  },
+  "keywords": [
+    "openclaw",
+    "cashclaw",
+    "ai-agent",
+    "freelance",
+    "monetization",
+    "stripe",
+    "autonomous",
+    "hyrve",
+    "email-outreach",
+    "competitor-analysis",
+    "landing-page",
+    "data-scraping",
+    "reputation-management",
+    "cold-email",
+    "web-scraping"
+  ],
+  "author": "Ertugrul Akben <i@ertugrulakben.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ertugrulakben/cashclaw"
+  },
+  "homepage": "https://cashclawai.com"
+}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CashClaw Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f99e;</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">CashClaw</span>
+        <span class="version" id="appVersion">v1.6.1</span>
+      </div>
+      <div class="header-right">
+        <span class="agent-name" id="agentName">Loading...</span>
+        <span class="status-dot" id="statusDot"></span>
+      </div>
+    </header>
+
+    <!-- Earnings Cards -->
+    <section class="cards">
+      <div class="card card-total">
+        <div class="card-label">Total Earned</div>
+        <div class="card-value" id="totalEarned">$0.00</div>
+      </div>
+      <div class="card card-monthly">
+        <div class="card-label">This Month</div>
+        <div class="card-value" id="monthlyEarned">$0.00</div>
+        <div class="card-sub" id="monthlyCount">0 jobs</div>
+      </div>
+      <div class="card card-weekly">
+        <div class="card-label">This Week</div>
+        <div class="card-value" id="weeklyEarned">$0.00</div>
+        <div class="card-sub" id="weeklyCount">0 jobs</div>
+      </div>
+      <div class="card card-today">
+        <div class="card-label">Today</div>
+        <div class="card-value" id="todayEarned">$0.00</div>
+        <div class="card-sub" id="todayCount">0 jobs</div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="main-grid">
+      <!-- Earnings Chart -->
+      <section class="panel chart-panel">
+        <h2 class="panel-title">Earnings (Last 30 Days)</h2>
+        <div class="chart-container">
+          <canvas id="earningsChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Active Missions -->
+      <section class="panel missions-panel">
+        <h2 class="panel-title">
+          Missions
+          <span class="badge" id="missionCount">0</span>
+        </h2>
+        <div class="missions-list" id="missionsList">
+          <div class="empty-state">No missions yet</div>
+        </div>
+      </section>
+
+      <!-- Services -->
+      <section class="panel services-panel">
+        <h2 class="panel-title">Active Services</h2>
+        <div class="services-list" id="servicesList">
+          <div class="empty-state">No services configured</div>
+        </div>
+      </section>
+
+      <!-- Skills -->
+      <section class="panel skills-panel">
+        <h2 class="panel-title">
+          Skills
+          <span class="badge" id="skillsCount">0</span>
+        </h2>
+        <div class="skills-list" id="skillsList">
+          <div class="empty-state">No skills installed</div>
+        </div>
+      </section>
+
+      <!-- HYRVE Marketplace -->
+      <section class="panel hyrve-panel">
+        <h2 class="panel-title">
+          HYRVE Marketplace
+          <span class="badge" id="hyrveStatus">-</span>
+        </h2>
+        <div id="hyrveContent">
+          <div class="empty-state">Loading HYRVE data...</div>
+        </div>
+        <div class="hyrve-actions" id="hyrveActions" style="display:none;">
+          <button class="btn btn-primary" id="hyrveRegisterBtn" onclick="registerOnHyrve()">Register on HYRVE</button>
+          <button class="btn btn-secondary" id="hyrveSyncBtn" onclick="syncHyrve()">Sync Status</button>
+          <a class="btn btn-outline" href="https://app.hyrveai.com" target="_blank">Open Dashboard</a>
+        </div>
+      </section>
+
+      <!-- HYRVE Wallet -->
+      <section class="panel wallet-panel">
+        <h2 class="panel-title">HYRVE Wallet</h2>
+        <div class="wallet-cards" id="walletCards">
+          <div class="wallet-card wallet-available">
+            <div class="card-label">Available</div>
+            <div class="card-value" id="walletAvailable">$0.00</div>
+          </div>
+          <div class="wallet-card wallet-pending">
+            <div class="card-label">Pending (Escrow)</div>
+            <div class="card-value" id="walletPending">$0.00</div>
+          </div>
+          <div class="wallet-card wallet-total">
+            <div class="card-label">Total Earned</div>
+            <div class="card-value" id="walletTotal">$0.00</div>
+          </div>
+        </div>
+        <div class="wallet-transactions" id="walletTransactions">
+          <div class="empty-state">No transactions yet</div>
+        </div>
+      </section>
+
+      <!-- Recent Earnings -->
+      <section class="panel recent-panel">
+        <h2 class="panel-title">Recent Earnings</h2>
+        <div class="recent-list" id="recentList">
+          <div class="empty-state">No earnings recorded</div>
+        </div>
+      </section>
+
+      <!-- Agent Info -->
+      <section class="panel info-panel">
+        <h2 class="panel-title">Agent Info</h2>
+        <div class="info-grid" id="agentInfo">
+          <div class="info-row">
+            <span class="info-label">Owner</span>
+            <span class="info-value" id="infoOwner">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value" id="infoEmail">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Currency</span>
+            <span class="info-value" id="infoCurrency">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Stripe</span>
+            <span class="info-value" id="infoStripe">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">HYRVEai</span>
+            <span class="info-value" id="infoHyrve">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">OpenClaw</span>
+            <span class="info-value" id="infoOpenClaw">-</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span id="footerVersion">CashClaw v1.6.1</span>
+      <span class="footer-sep">|</span>
+      <a href="https://cashclawai.com" target="_blank">cashclawai.com</a>
+      <span class="footer-sep">|</span>
+      <span id="lastUpdated">-</span>
+    </footer>
+  </div>
+
+  <!-- Job Detail Modal -->
+  <div class="modal-overlay" id="jobModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="jobModalTitle">Job Details</h3>
+        <button class="modal-close" onclick="closeJobModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="jobModalBody"></div>
+      <div class="modal-footer" id="jobModalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Deliver Modal -->
+  <div class="modal-overlay" id="deliverModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Deliver Work</h3>
+        <button class="modal-close" onclick="closeDeliverModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Deliverables URL *</label>
+        <input type="url" id="deliverUrl" placeholder="https://..." class="modal-input">
+        <label>Notes (optional)</label>
+        <textarea id="deliverNotes" placeholder="Summary of work delivered..." class="modal-input" rows="3"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="deliverSubmitBtn" onclick="submitDelivery()">Submit Delivery</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
