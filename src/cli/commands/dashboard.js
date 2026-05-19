@@ -1,9 +1,11 @@
+import 'dotenv/config';
 import chalk from 'chalk';
 import ora from 'ora';
 import open from 'open';
 import { loadConfig } from '../utils/config.js';
 import { createDashboardServer } from '../../dashboard/server.js';
 import { showMiniBanner } from '../utils/banner.js';
+import localtunnel from 'localtunnel';
 
 const orange = chalk.hex('#FF6B35');
 const green = chalk.hex('#16C784');
@@ -49,6 +51,23 @@ export async function runDashboard(options = {}) {
     
     if (usedPort !== startPort) {
       console.log(dim(`  (Note: Port ${startPort} was busy, switched to ${usedPort})`));
+    }
+
+    // Initialize localtunnel
+    try {
+      const config = await loadConfig();
+      const subdomain = process.env.TUNNEL_SUBDOMAIN || (config.agent?.name ? config.agent.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : undefined);
+      const tunnel = await localtunnel({ port: usedPort, subdomain });
+      process.env.PUBLIC_URL = tunnel.url;
+      console.log();
+      console.log(`  ${green('🌍 Public Tunnel Active:')} ${chalk.bold(tunnel.url)}`);
+      console.log(`  ${green('💳 Webhook URL:')}          ${tunnel.url}/api/webhooks/paypal`);
+      
+      tunnel.on('close', () => {
+        console.log(dim('  Tunnel closed.'));
+      });
+    } catch (e) {
+      console.log(chalk.red(`  Could not start localtunnel: ${e.message}`));
     }
 
     console.log();

@@ -1,208 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CashClaw Dashboard</title>
-  <link rel="stylesheet" href="/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f99e;</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CashClaw Production</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Reset and base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: #212121; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 24px; font-size: 13px; -webkit-font-smoothing: antialiased; }
+.container { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px; }
+.brand-section { display: flex; align-items: center; gap: 12px; }
+.logo-box { width: 36px; height: 36px; background: #31425b; border-radius: 8px; }
+.brand-text h1 { font-size: 22px; font-weight: 600; margin: 0; line-height: 1.1; letter-spacing: -0.5px; }
+.brand-text span { font-size: 13px; color: #888; font-style: italic; }
+.status-section { display: flex; align-items: center; gap: 16px; }
+.status-pill { background: #1b4d2e; color: #4ade80; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; }
+.time { color: #888; font-variant-numeric: tabular-nums; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.card { background: #2b2b2b; border-radius: 12px; padding: 20px; border: 1px solid #3a3a3a; display: flex; flex-direction: column; }
+.col-3 { grid-column: span 3; }
+.col-4 { grid-column: span 4; }
+.col-8 { grid-column: span 8; }
+.card-title { display: flex; align-items: center; gap: 8px; color: #aaa; text-transform: uppercase; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 16px; }
+.card-icon { width: 8px; height: 8px; border: 1px solid #888; border-radius: 1px; }
+.stat-value { font-size: 32px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+.stat-sub { font-size: 12px; }
+.text-green { color: #4ade80; }
+.text-red { color: #f87171; }
+.text-yellow { color: #fbbf24; }
+.text-blue { color: #60a5fa; }
+.text-muted { color: #888; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.btn-group { display: flex; gap: 8px; }
+.btn { background: transparent; border: 1px solid #4a4a4a; color: #ccc; padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+.btn:hover, .btn.active { background: #4a4a4a; color: #fff; }
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #3a3a3a; }
+.list-item:last-child { border-bottom: none; padding-bottom: 0; }
+.item-left { display: flex; gap: 14px; align-items: center; }
+.item-icon { width: 8px; height: 8px; border-radius: 50%; }
+.item-title { font-weight: 600; font-size: 13px; color: #eee; }
+.item-sub { font-size: 11px; color: #888; margin-top: 4px; }
+.badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+.badge.active { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.badge.busy { background: rgba(234, 179, 8, 0.15); color: #fbbf24; }
+.badge.idle { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+.job-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.03); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid rgba(255,255,255,0.05); }
+.job-badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.job-badge.progress { background: rgba(234, 179, 8, 0.15); color: #fbbf24; }
+.job-badge.queued { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.job-badge.paid { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.progress-wrap { margin-bottom: 16px; }
+.progress-wrap:last-child { margin-bottom: 0; }
+.progress-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; font-weight: 500; }
+.progress-bg { height: 6px; background: #1e1e1e; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.quick-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: auto; }
+.quick-stat-box { background: #212121; padding: 18px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+.quick-stat-val { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.quick-stat-label { font-size: 11px; color: #888; }
+.activity-feed { flex: 1; overflow-y: auto; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: #d1d5db; line-height: 1.6; }
+.activity-feed::-webkit-scrollbar { width: 6px; }
+.activity-feed::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+.log-line { margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+.log-time { color: #6b7280; margin-right: 12px; }
+.drill-down { width: 100%; background: transparent; border: 1px solid #4a4a4a; color: #ccc; padding: 10px; border-radius: 8px; margin-top: auto; cursor: pointer; transition: 0.2s; font-size: 12px; }
+.drill-down:hover { background: #3a3a3a; color: #fff; }
+</style>
 </head>
 <body>
-  <div id="app">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-left">
-        <span class="logo">CashClaw</span>
-        <span class="version" id="appVersion">v1.6.1</span>
+<div class="container">
+  <div class="top-header">
+    <div class="brand-section">
+      <div class="logo-box"></div>
+      <div class="brand-text">
+        <h1>CashClaw</h1>
+        <span>production - live</span>
       </div>
-      <div class="header-right">
-        <span class="agent-name" id="agentName">Loading...</span>
-        <span class="status-dot" id="statusDot"></span>
-      </div>
-    </header>
-
-    <!-- Earnings Cards -->
-    <section class="cards">
-      <div class="card card-total">
-        <div class="card-label">Total Earned</div>
-        <div class="card-value" id="totalEarned">$0.00</div>
-      </div>
-      <div class="card card-monthly">
-        <div class="card-label">This Month</div>
-        <div class="card-value" id="monthlyEarned">$0.00</div>
-        <div class="card-sub" id="monthlyCount">0 jobs</div>
-      </div>
-      <div class="card card-weekly">
-        <div class="card-label">This Week</div>
-        <div class="card-value" id="weeklyEarned">$0.00</div>
-        <div class="card-sub" id="weeklyCount">0 jobs</div>
-      </div>
-      <div class="card card-today">
-        <div class="card-label">Today</div>
-        <div class="card-value" id="todayEarned">$0.00</div>
-        <div class="card-sub" id="todayCount">0 jobs</div>
-      </div>
-    </section>
-
-    <!-- Main Content -->
-    <div class="main-grid">
-      <!-- Earnings Chart -->
-      <section class="panel chart-panel">
-        <h2 class="panel-title">Earnings (Last 30 Days)</h2>
-        <div class="chart-container">
-          <canvas id="earningsChart"></canvas>
-        </div>
-      </section>
-
-      <!-- Active Missions -->
-      <section class="panel missions-panel">
-        <h2 class="panel-title">
-          Missions
-          <span class="badge" id="missionCount">0</span>
-        </h2>
-        <div class="missions-list" id="missionsList">
-          <div class="empty-state">No missions yet</div>
-        </div>
-      </section>
-
-      <!-- Services -->
-      <section class="panel services-panel">
-        <h2 class="panel-title">Active Services</h2>
-        <div class="services-list" id="servicesList">
-          <div class="empty-state">No services configured</div>
-        </div>
-      </section>
-
-      <!-- Skills -->
-      <section class="panel skills-panel">
-        <h2 class="panel-title">
-          Skills
-          <span class="badge" id="skillsCount">0</span>
-        </h2>
-        <div class="skills-list" id="skillsList">
-          <div class="empty-state">No skills installed</div>
-        </div>
-      </section>
-
-      <!-- HYRVE Marketplace -->
-      <section class="panel hyrve-panel">
-        <h2 class="panel-title">
-          HYRVE Marketplace
-          <span class="badge" id="hyrveStatus">-</span>
-        </h2>
-        <div id="hyrveContent">
-          <div class="empty-state">Loading HYRVE data...</div>
-        </div>
-        <div class="hyrve-actions" id="hyrveActions" style="display:none;">
-          <button class="btn btn-primary" id="hyrveRegisterBtn" onclick="registerOnHyrve()">Register on HYRVE</button>
-          <button class="btn btn-secondary" id="hyrveSyncBtn" onclick="syncHyrve()">Sync Status</button>
-          <a class="btn btn-outline" href="https://app.hyrveai.com" target="_blank">Open Dashboard</a>
-        </div>
-      </section>
-
-      <!-- HYRVE Wallet -->
-      <section class="panel wallet-panel">
-        <h2 class="panel-title">HYRVE Wallet</h2>
-        <div class="wallet-cards" id="walletCards">
-          <div class="wallet-card wallet-available">
-            <div class="card-label">Available</div>
-            <div class="card-value" id="walletAvailable">$0.00</div>
-          </div>
-          <div class="wallet-card wallet-pending">
-            <div class="card-label">Pending (Escrow)</div>
-            <div class="card-value" id="walletPending">$0.00</div>
-          </div>
-          <div class="wallet-card wallet-total">
-            <div class="card-label">Total Earned</div>
-            <div class="card-value" id="walletTotal">$0.00</div>
-          </div>
-        </div>
-        <div class="wallet-transactions" id="walletTransactions">
-          <div class="empty-state">No transactions yet</div>
-        </div>
-      </section>
-
-      <!-- Recent Earnings -->
-      <section class="panel recent-panel">
-        <h2 class="panel-title">Recent Earnings</h2>
-        <div class="recent-list" id="recentList">
-          <div class="empty-state">No earnings recorded</div>
-        </div>
-      </section>
-
-      <!-- Agent Info -->
-      <section class="panel info-panel">
-        <h2 class="panel-title">Agent Info</h2>
-        <div class="info-grid" id="agentInfo">
-          <div class="info-row">
-            <span class="info-label">Owner</span>
-            <span class="info-value" id="infoOwner">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Email</span>
-            <span class="info-value" id="infoEmail">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Currency</span>
-            <span class="info-value" id="infoCurrency">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Stripe</span>
-            <span class="info-value" id="infoStripe">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">HYRVEai</span>
-            <span class="info-value" id="infoHyrve">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">OpenClaw</span>
-            <span class="info-value" id="infoOpenClaw">-</span>
-          </div>
-        </div>
-      </section>
     </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <span id="footerVersion">CashClaw v1.6.1</span>
-      <span class="footer-sep">|</span>
-      <a href="https://cashclawai.com" target="_blank">cashclawai.com</a>
-      <span class="footer-sep">|</span>
-      <span id="lastUpdated">-</span>
-    </footer>
-  </div>
-
-  <!-- Job Detail Modal -->
-  <div class="modal-overlay" id="jobModal" style="display:none;">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="jobModalTitle">Job Details</h3>
-        <button class="modal-close" onclick="closeJobModal()">&times;</button>
+    <div class="status-section">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        All systems live
       </div>
-      <div class="modal-body" id="jobModalBody"></div>
-      <div class="modal-footer" id="jobModalFooter"></div>
+      <div class="time" id="clock">00:00:00</div>
     </div>
   </div>
 
-  <!-- Deliver Modal -->
-  <div class="modal-overlay" id="deliverModal" style="display:none;">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Deliver Work</h3>
-        <button class="modal-close" onclick="closeDeliverModal()">&times;</button>
+  <div class="grid">
+    <!-- Row 1: Stats -->
+    <div class="card col-3">
+      <div class="card-title"><div class="card-icon"></div> TOTAL EARNED</div>
+      <div class="stat-value" id="stat-earned">$0</div>
+      <div class="stat-sub text-green" id="stat-earned-today">↑ +$0 today</div>
+    </div>
+    <div class="card col-3">
+      <div class="card-title"><div class="card-icon"></div> JOBS DONE</div>
+      <div class="stat-value" id="stat-jobs-done">0</div>
+      <div class="stat-sub text-green" id="stat-jobs-done-sub">completed missions</div>
+    </div>
+    <div class="card col-3">
+      <div class="card-title"><div class="card-icon"></div> ACTIVE JOBS</div>
+      <div class="stat-value" id="stat-active">0</div>
+      <div class="stat-sub text-yellow" id="stat-pending">0 queued</div>
+    </div>
+    <div class="card col-3">
+      <div class="card-title"><div class="card-icon"></div> ACTIVE SKILLS</div>
+      <div class="stat-value" id="stat-skills">0</div>
+      <div class="stat-sub text-blue" id="stat-skills-sub">utilized integrations</div>
+    </div>
+
+    <!-- Row 2: Charts & Engines -->
+    <div class="card col-8">
+      <div class="flex-between" style="margin-bottom: 24px;">
+        <div class="card-title" style="margin-bottom: 0;"><div class="card-icon"></div> revenue over time (7d)</div>
       </div>
-      <div class="modal-body">
-        <label>Deliverables URL *</label>
-        <input type="url" id="deliverUrl" placeholder="https://..." class="modal-input">
-        <label>Notes (optional)</label>
-        <textarea id="deliverNotes" placeholder="Summary of work delivered..." class="modal-input" rows="3"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" id="deliverSubmitBtn" onclick="submitDelivery()">Submit Delivery</button>
+      <div style="height: 240px; position: relative;">
+        <canvas id="revenueChart"></canvas>
       </div>
     </div>
-  </div>
 
-  <script src="/app.js"></script>
+    <div class="card col-4">
+      <div class="card-title"><div class="card-icon"></div> utilized skills</div>
+      <div id="skills-list" style="display: flex; flex-direction: column; justify-content: flex-start; flex: 1;">
+        <div style="color: #888; text-align: center; padding: 20px;">Awaiting first job...</div>
+      </div>
+    </div>
+
+    <!-- Row 3: Queue & Skills & Payouts -->
+    <div class="card col-4" style="height: 480px;">
+      <div class="card-title"><div class="card-icon"></div> live job queue</div>
+      <div id="job-queue" style="flex: 1; overflow-y: auto;">
+        <div style="color: #888; text-align: center; padding: 20px;">Awaiting first job...</div>
+      </div>
+    </div>
+
+    <div class="card col-4" style="height: 480px;">
+      <div class="card-title"><div class="card-icon"></div> skill performance</div>
+      <div id="skill-performance" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+        <div style="color: #888; text-align: center; padding: 20px;">Awaiting first job...</div>
+      </div>
+    </div>
+
+    <div class="col-4" style="display: flex; flex-direction: column; gap: 16px; height: 480px;">
+      <div class="card" style="flex: 1;">
+        <div class="card-title"><div class="card-icon"></div> recent payouts</div>
+        <div id="recent-payouts" style="overflow-y: auto; height: 100%;">
+          <div style="color: #888; text-align: center; padding: 20px;">Awaiting first job...</div>
+        </div>
+      </div>
+      <div class="card" style="padding: 16px;">
+        <div class="card-title" style="margin-bottom: 12px;"><div class="card-icon"></div> quick stats</div>
+        <div class="quick-stats-grid" id="quick-stats-grid">
+          <div class="quick-stat-box">
+            <div class="quick-stat-val" id="qs-success">0%</div>
+            <div class="quick-stat-label">success rate</div>
+          </div>
+          <div class="quick-stat-box">
+            <div class="quick-stat-val" id="qs-value">$0</div>
+            <div class="quick-stat-label">avg value</div>
+          </div>
+          <div class="quick-stat-box">
+            <div class="quick-stat-val" id="qs-services">0</div>
+            <div class="quick-stat-label">active services</div>
+          </div>
+          <div class="quick-stat-box">
+            <div class="quick-stat-val" id="qs-clients">0</div>
+            <div class="quick-stat-label">total clients</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Feed & Types -->
+    <div class="card col-8" style="height: 300px;">
+      <div class="card-title"><div class="card-icon"></div> live activity feed</div>
+      <div class="activity-feed" id="logFeed">
+        <div class="log-line"><span class="log-time" id="init-time"></span><span style="color:#d1d5db">System initialized and awaiting new cycle telemetry...</span></div>
+      </div>
+    </div>
+
+    <div class="card col-4" style="height: 300px;">
+      <div class="card-title"><div class="card-icon"></div> jobs by type</div>
+      <div style="display: flex; align-items: center; gap: 24px; margin-top: 8px;">
+        <div style="width: 130px; height: 130px; position: relative;">
+          <canvas id="typeChart"></canvas>
+        </div>
+        <div id="typeLegend" style="flex: 1;">
+          <div style="color: #888; text-align: center;">Awaiting first job...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// --- Clocks ---
+document.getElementById('init-time').textContent = new Date().toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}, 1000);
+
+// --- Real Data Integration ---
+const evtSource = new EventSource('/api/events');
+evtSource.onmessage = e => {
+  try {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'log') appendLog(msg.data);
+  } catch(err) {
+    console.error("Event parsing error:", err);
+  }
+};
+
+function appendLog(entry) {
+  const f = document.getElementById('logFeed');
+  const d = document.createElement('div');
+  d.className = 'log-line';
+  const ts = entry.ts ? entry.ts.split('T')[1].split('.')[0] : new Date().toLocaleTimeString('en-US', {hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  let color = '#d1d5db';
+  if (entry.level === 'ERROR') color = '#ef4444';
+  if (entry.level === 'WARN') color = '#fbbf24';
+  d.innerHTML = `<span class="log-time">${ts}</span><span style="color:${color}">${entry.msg || entry}</span>`;
+  f.appendChild(d);
+  if (f.children.length > 50) f.removeChild(f.firstChild);
+  f.scrollTop = f.scrollHeight;
+}
+
+const colors = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#6b7280', '#eab308', '#ef4444'];
+
+async function loadData() {
+  try {
+    let jobs = [];
+    
+    // First try the Hunter server's endpoint
+    try {
+      const jRes = await fetch('/api/jobs');
+      if (jRes.ok) {
+        jobs = await jRes.json();
+      } else {
+        throw new Error("No /api/jobs");
+      }
+    } catch (e) {
+      // Fallback to Main server's endpoint
+      try {
+        const mRes = await fetch('/api/missions');
+        if (mRes.ok) {
+          const data = await mRes.json();
+          jobs = data.missions || [];
+        }
+      } catch (err) {}
+    }
+
+    if (!Array.isArray(jobs)) jobs = [];
+
+    // Calculate metrics
+    let totalEarned = 0;
+    let todayEarned = 0;
+    let completedJobs = 0;
+    let activeJobs = 0;
+    let queuedJobs = 0;
+    
+    const last7Days = Array(7).fill(0).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { dateStr: d.toISOString().split('T')[0], total: 0, label: d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) };
+    });
+    
+    const byService = {};
+    const payouts = [];
+    const clients = new Set();
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    jobs.forEach(j => {
+      const budget = parseFloat(j.budget || j.price_usd || j.amount || 0);
+      const isCompleted = j.status === 'delivered' || j.status === 'paid' || j.status === 'completed';
+      const service = j.service || j.service_type || 'General';
+      const clientName = (j.client && j.client.name) || j.handle || 'Client';
+      const dateStr = j.completed_at || j.completedAt || j.updated_at || j.startedAt || new Date().toISOString();
+      const jobDate = dateStr.split('T')[0];
+
+      if (clientName && clientName !== 'Unknown') clients.add(clientName);
+
+      if (isCompleted) {
+        completedJobs++;
+        totalEarned += budget;
+        if (jobDate === todayStr) {
+          todayEarned += budget;
+        }
+        
+        const dayMatch = last7Days.find(d => d.dateStr === jobDate);
+        if (dayMatch) dayMatch.total += budget;
+        
+        if (!byService[service]) byService[service] = { total: 0, count: 0 };
+        byService[service].total += budget;
+        byService[service].count++;
+        
+        payouts.push({ client: clientName, service, amount: budget, date: dateStr });
+      } else {
+        if (j.status === 'queued' || j.status === 'created') queuedJobs++;
+        else activeJobs++;
+      }
+      
+      // Even if not completed, we track the service to show what skills are active
+      if (!byService[service] && !isCompleted) byService[service] = { total: 0, count: 1 };
+      else if (!isCompleted) byService[service].count++;
+    });
+
+    payouts.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const services = Object.keys(byService);
+
+    // DOM Updates
+    document.getElementById('stat-earned').textContent = '$' + totalEarned.toLocaleString();
+    document.getElementById('stat-earned-today').textContent = '↑ +$' + todayEarned + ' today';
+    
+    document.getElementById('stat-jobs-done').textContent = completedJobs;
+    document.getElementById('stat-active').textContent = activeJobs;
+    document.getElementById('stat-pending').textContent = queuedJobs + ' queued';
+    document.getElementById('stat-skills').textContent = services.length;
+
+    // Installed Skills List
+    const skillList = document.getElementById('skills-list');
+    if (services.length > 0) {
+      skillList.innerHTML = services.slice(0, 5).map((s, i) => `
+        <div class="list-item">
+          <div class="item-left"><div class="item-icon" style="background: ${colors[i%colors.length]};"></div> <div class="item-title">${s}</div></div>
+          <div style="text-align: right;"><div class="badge active" style="margin-bottom: 4px; display: inline-block;">utilized</div></div>
+        </div>
+      `).join('');
+    } else {
+      skillList.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Awaiting first job...</div>';
+    }
+
+    // Job Queue
+    const q = document.getElementById('job-queue');
+    if (jobs.length > 0) {
+      q.innerHTML = jobs.slice(0, 6).map(j => {
+        let badgeClass = 'queued', badgeText = j.status;
+        let iconColor = '#9ca3af';
+        if (j.status === 'generating' || j.status === 'in_progress' || j.status === 'payment_pending' || j.status === 'preview_pending') { 
+          badgeClass = 'progress'; badgeText = j.status.replace('_', ' '); iconColor = '#fbbf24'; 
+        }
+        if (j.status === 'delivered' || j.status === 'paid' || j.status === 'completed') { 
+          badgeClass = 'paid'; badgeText = 'done'; iconColor = '#4ade80'; 
+        }
+        const title = j.service || j.name || j.service_type || 'Task';
+        const client = (j.client && j.client.name) || j.handle || 'Client';
+        return `
+        <div class="list-item">
+          <div class="item-left">
+            <div class="job-icon" style="color:${iconColor}">□</div>
+            <div>
+              <div class="item-title">${title}</div>
+              <div class="item-sub">${client}</div>
+            </div>
+          </div>
+          <div class="job-badge ${badgeClass}">${badgeText}</div>
+        </div>`;
+      }).join('');
+    } else {
+      q.innerHTML = '<div style="padding: 20px; color: #888; text-align: center;">Awaiting first job...</div>';
+    }
+
+    // Revenue Chart
+    if (window.revChartInstance) window.revChartInstance.destroy();
+    const revCtx = document.getElementById('revenueChart').getContext('2d');
+    window.revChartInstance = new Chart(revCtx, {
+      type: 'line',
+      data: {
+        labels: last7Days.map(d => d.label),
+        datasets: [{
+          label: 'Revenue',
+          data: last7Days.map(d => d.total),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#3b82f6',
+          pointBorderColor: '#fff',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { y: { grid: { color: '#333' }, border: { display: false }, ticks: { color: '#888', callback: v => '$' + v }, min: 0 }, x: { grid: { display: false }, border: { display: false }, ticks: { color: '#888' } } }
+      }
+    });
+
+    // Payouts
+    const payoutsList = document.getElementById('recent-payouts');
+    if (payouts.length > 0) {
+      payoutsList.innerHTML = payouts.slice(0, 5).map(e => `
+        <div class="list-item" style="padding: 10px 0;">
+          <div><div class="item-title">${e.client}</div><div class="item-sub">${e.service} · ${new Date(e.date).toLocaleDateString()}</div></div>
+          <div class="text-green" style="font-weight: 600;">+$${e.amount}</div>
+        </div>
+      `).join('');
+    } else {
+      payoutsList.innerHTML = '<div style="padding: 10px 0; color: #888; text-align:center;">Awaiting first job...</div>';
+    }
+
+    // Skill Performance Bars
+    const skillPerf = document.getElementById('skill-performance');
+    if (services.length > 0) {
+      const maxTotal = Math.max(...services.map(s => byService[s].total || 1));
+      skillPerf.innerHTML = services.map((s, i) => {
+        const total = byService[s].total;
+        const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+        return `
+          <div class="progress-wrap">
+            <div class="progress-header"><span>${s}</span> <span class="text-muted">${pct}%</span></div>
+            <div class="progress-bg"><div class="progress-fill" style="width: ${pct}%; background: ${colors[i%colors.length]};"></div></div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      skillPerf.innerHTML = '<div style="color:#888; text-align:center;">Awaiting first job...</div>';
+    }
+
+    // Jobs By Type Chart
+    if (window.typeChartInstance) window.typeChartInstance.destroy();
+    if (services.length > 0 && services.some(s => byService[s].total > 0)) {
+      const typeCtx = document.getElementById('typeChart').getContext('2d');
+      window.typeChartInstance = new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+          labels: services,
+          datasets: [{
+            data: services.map(s => byService[s].total),
+            backgroundColor: colors.slice(0, services.length),
+            borderWidth: 0,
+            cutout: '75%'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+      });
+    }
+
+    // Type Legend
+    const legend = document.getElementById('typeLegend');
+    if (services.length > 0) {
+      legend.innerHTML = services.map((s, i) => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:12px;">
+          <div style="display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;background:${colors[i%colors.length]};border-radius:2px;"></div> ${s}</div><div style="color:#888;">$${byService[s].total}</div>
+        </div>
+      `).join('');
+    } else {
+      legend.innerHTML = '<div style="color: #888; text-align: center;">Awaiting first job...</div>';
+    }
+
+    // Quick Stats
+    const totalMissions = jobs.length;
+    document.getElementById('qs-success').textContent = totalMissions > 0 ? Math.round((completedJobs / totalMissions) * 100) + '%' : '0%';
+    document.getElementById('qs-value').textContent = '$' + (completedJobs > 0 ? Math.round(totalEarned / completedJobs) : 0);
+    document.getElementById('qs-services').textContent = services.length;
+    document.getElementById('qs-clients').textContent = clients.size;
+
+  } catch (e) {
+    console.error('Error fetching data:', e);
+  }
+}
+
+loadData();
+setInterval(loadData, 10000);
+</script>
 </body>
 </html>

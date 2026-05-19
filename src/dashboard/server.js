@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { loadConfig, saveConfig } from '../cli/utils/config.js';
 import { VERSION } from '../utils/version.js';
@@ -225,6 +226,49 @@ export function createDashboardServer() {
       res.json({ success: true, key, value });
     } catch (err) {
       res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+    }
+  });
+
+  /**
+   * POST /api/webhooks/paypal
+   * Real PayPal Webhook with signature verification.
+   */
+  app.get('/api/webhooks/paypal', (req, res) => res.status(200).send('Webhook active'));
+
+  app.post('/api/webhooks/paypal', express.raw({ type: 'application/json' }), async (req, res) => {
+    try {
+      const { verifyWebhookSignature } = await import('../integrations/paypal-bridge.js');
+      const rawBody = req.body;
+      const headers = req.headers;
+      
+      const isValid = await verifyWebhookSignature(headers, rawBody.toString('utf8'));
+      if (!isValid) {
+        console.warn('⚠️ Webhook signature verification failed');
+        return res.status(400).send('Invalid signature');
+      }
+
+      const event = JSON.parse(rawBody.toString('utf8'));
+      if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+        const invoiceId = event.resource?.custom_id || event.resource?.invoice_id;
+        const { deliverWork } = await import('../integrations/hunter-worker.js');
+        
+        const LEADS_DIR = path.join(__dirname, '..', '..', 'leads');
+        const jobsDir = path.join(LEADS_DIR, 'jobs');
+        if (fs.existsSync(jobsDir)) {
+          const files = fs.readdirSync(jobsDir).filter(f => f.endsWith('.json'));
+          for (const f of files) {
+            const job = JSON.parse(fs.readFileSync(path.join(jobsDir, f), 'utf8'));
+            if (job.paymentOrder === invoiceId || job.leadId === invoiceId) {
+              await deliverWork(job.leadId);
+              break;
+            }
+          }
+        }
+      }
+      res.sendStatus(200);
+    } catch (e) {
+      console.error(`[Webhook Error] ${e.message}`);
+      res.status(500).json({ error: e.message });
     }
   });
 

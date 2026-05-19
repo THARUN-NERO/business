@@ -9,24 +9,31 @@
   "main": "./src/cli/index.js",
   "scripts": {
     "start": "node bin/cashclaw.js",
-    "test": "node --test tests/cli.test.js"
+    "test": "node --test tests/cli.test.js",
+    "hunt": "node src/integrations/hunter-bridge.js",
+    "approve": "node src/approve-leads.js",
+    "test-one-cycle": "node -e \"import('./src/integrations/hunter-bridge.js').then(m => m.runHuntCycle().then(() => process.exit(0)))\""
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "commander": "^12.0.0",
-    "inquirer": "^9.0.0",
-    "chalk": "^5.0.0",
-    "ora": "^8.0.0",
-    "stripe": "^17.0.0",
-    "express": "^4.21.0",
-    "open": "^10.0.0",
-    "uuid": "^10.0.0",
-    "fs-extra": "^11.0.0",
-    "dayjs": "^1.11.0",
     "boxen": "^8.0.0",
-    "cli-table3": "^0.6.0"
+    "canvas": "^3.2.3",
+    "chalk": "^5.0.0",
+    "cli-table3": "^0.6.0",
+    "commander": "^12.0.0",
+    "dayjs": "^1.11.0",
+    "express": "^4.21.0",
+    "fs-extra": "^11.0.0",
+    "inquirer": "^9.0.0",
+    "localtunnel": "^2.0.2",
+    "nodemailer": "^6.10.1",
+    "open": "^10.0.0",
+    "ora": "^8.0.0",
+    "playwright": "^1.59.1",
+    "stripe": "^17.0.0",
+    "uuid": "^10.0.0"
   },
   "keywords": [
     "openclaw",

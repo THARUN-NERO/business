@@ -1,0 +1,19 @@
+services:
+  antigravity-claude-proxy:
+    build: .
+    ports:
+      - "48123:48123"
+      - "51121:51121"
+    environment:
+      PORT: "48123"
+      # Use OAuth mode with persistent storage (accounts.json with refresh tokens)
+      ACCOUNT_CONFIG_PATH: "/data/accounts.json"
+      # Disable SSL verification for corporate proxies
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    volumes:
+      # Persistent volume for accounts.json (stores refresh tokens)
+      - antigravity-data:/data
+    restart: unless-stopped
+
+volumes:
+  antigravity-data:

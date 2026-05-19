@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - CashClaw Agent Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.paypal.com/web-sdk/v6/core"></script>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --card-bg: #141416;
+      --text: #ffffff;
+      --text-muted: #888888;
+      --border: #2a2a2e;
+      --accent: #e5ff00;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .checkout-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .preview-section {
+      margin-bottom: 30px;
+    }
+
+    .preview-section h3 {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .previews {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .preview-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    .preview-img:hover {
+      transform: scale(1.05);
+    }
+
+    .order-summary {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .summary-row.total .amount {
+      color: var(--accent);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: rgba(229, 255, 0, 0.1);
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .delivered-message {
+      text-align: center;
+      padding: 30px;
+      background: rgba(0, 255, 100, 0.05);
+      border: 1px solid rgba(0, 255, 100, 0.2);
+      border-radius: 12px;
+      display: none;
+    }
+
+    .delivered-message h2 {
+      color: #00ff64;
+      margin-bottom: 10px;
+    }
+
+    .unwatermarked-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .download-btn {
+      display: block;
+      padding: 12px;
+      background: #2a2a2e;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .download-btn:hover {
+      background: #3a3a3e;
+    }
+
+    #paypal-button-container {
+      min-height: 150px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="checkout-container" id="main-container">
+    <div class="loading" id="loading-state">Loading your order...</div>
+    
+    <div id="checkout-content" style="display: none;">
+      <div class="header">
+        <div class="status-badge" id="job-status">Awaiting Payment</div>
+        <h1>Final Delivery</h1>
+        <p>Review your watermarked previews and complete payment to unlock high-resolution files.</p>
+      </div>
+
+      <div class="preview-section">
+        <h3>Watermarked Previews</h3>
+        <div class="previews" id="preview-gallery">
+          <!-- Previews inserted via JS -->
+        </div>
+      </div>
+
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Service</span>
+          <span id="job-service">Web Development</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total Amount</span>
+          <span class="amount" id="job-amount">$0.00</span>
+        </div>
+      </div>
+
+      <div id="payment-section">
+        <div id="paypal-button-container">
+          <paypal-button hidden></paypal-button>
+        </div>
+      </div>
+
+      <div id="delivered-section" class="delivered-message">
+        <h2>Payment Successful!</h2>
+        <p>Thank you. Your final, unwatermarked files are unlocked below.</p>
+        <div class="unwatermarked-links" id="final-gallery">
+          <!-- Final links inserted via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const jobId = window.location.pathname.split('/').pop();
+    let jobData = null;
+
+    async function loadJobData() {
+      try {
+        const res = await fetch(`/api/jobs/${jobId}`);
+        if (!res.ok) throw new Error('Job not found');
+        jobData = await res.json();
+        
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('checkout-content').style.display = 'block';
+        
+        document.getElementById('job-service').textContent = jobData.service;
+        document.getElementById('job-amount').textContent = `$${jobData.budget.toFixed(2)}`;
+        
+        // Render Previews
+        const previewGallery = document.getElementById('preview-gallery');
+        jobData.variants.forEach(variant => {
+          const img = document.createElement('img');
+          img.src = `/api/deliverables/${jobId}/${variant}_preview.png`;
+          img.className = 'preview-img';
+          img.onclick = () => window.open(img.src, '_blank');
+          previewGallery.appendChild(img);
+        });
+
+        if (jobData.status === 'delivered') {
+          showDeliveredState();
+        } else {
+          await initPayPal();
+        }
+      } catch (e) {
+        document.getElementById('loading-state').textContent = 'Error loading order: ' + e.message;
+      }
+    }
+
+    function showDeliveredState() {
+      document.getElementById('payment-section').style.display = 'none';
+      document.getElementById('job-status').textContent = 'Delivered';
+      document.getElementById('job-status').style.background = 'rgba(0,255,100,0.1)';
+      document.getElementById('job-status').style.color = '#00ff64';
+      
+      const deliveredSection = document.getElementById('delivered-section');
+      deliveredSection.style.display = 'block';
+      
+      const finalGallery = document.getElementById('final-gallery');
+      jobData.variants.forEach((variant, index) => {
+        const a = document.createElement('a');
+        a.href = `/api/deliverables/${jobId}/${variant}_final.png`;
+        a.download = `${variant}_final.png`;
+        a.target = '_blank';
+        a.className = 'download-btn';
+        a.textContent = `Download Variant ${index + 1} (Unwatermarked)`;
+        finalGallery.appendChild(a);
+      });
+    }
+
+    async function initPayPal() {
+      try {
+        const configRes = await fetch('/api/config');
+        const config = await configRes.json();
+
+        // 1. Create SDK Instance (SDK v6)
+        const sdkInstance = await window.paypal.createInstance({
+          clientId: config.clientId,
+          components: ["paypal-payments"],
+          pageType: "checkout",
+        });
+
+        // 2. Define Payment Session Options
+        const paymentSessionOptions = {
+          async onApprove(data) {
+            console.log("Payment approved, capturing...", data);
+            document.getElementById('paypal-button-container').innerHTML = '<div class="loading">Processing payment...</div>';
+            try {
+              const captureRes = await fetch('/api/checkout/orders/capture', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId: data.orderId, jobId: jobId })
+              });
+              const captureData = await captureRes.json();
+              
+              if (captureData.status === 'COMPLETED') {
+                jobData.status = 'delivered';
+                showDeliveredState();
+              } else {
+                alert("Payment capture failed. Status: " + captureData.status);
+                window.location.reload();
+              }
+            } catch (error) {
+              console.error("Payment capture error:", error);
+              alert("Payment capture error. Please contact support.");
+            }
+          },
+          onCancel(data) {
+            console.log("Payment cancelled:", data);
+          },
+          onError(error) {
+            console.error("Payment error:", error);
+            alert("Payment error occurred.");
+          },
+        };
+
+        // 3. Create One Time Payment Session
+        const paypalPaymentSession = sdkInstance.createPayPalOneTimePaymentSession(
+          paymentSessionOptions
+        );
+
+        // 4. Configure Web Component
+        const paypalButton = document.querySelector("paypal-button");
+        paypalButton.removeAttribute("hidden");
+
+        paypalButton.addEventListener("click", async () => {
+          try {
+            await paypalPaymentSession.start(
+              { presentationMode: "auto" },
+              async () => {
+                const res = await fetch("/api/checkout/orders/create", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ jobId: jobId })
+                });
+                const data = await res.json();
+                return { orderId: data.id };
+              }
+            );
+          } catch (error) {
+            console.error("PayPal payment start error:", error);
+          }
+        });
+
+      } catch (e) {
+        console.error("Failed to initialize PayPal:", e);
+        document.getElementById('paypal-button-container').innerHTML = 
+          `<p style="color:red; text-align:center;">Failed to load PayPal. Check credentials.</p>`;
+      }
+    }
+
+    loadJobData();
+  </script>
+</body>
+</html>

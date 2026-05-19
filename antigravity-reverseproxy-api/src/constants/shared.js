@@ -1,0 +1,173 @@
+/**
+ * Shared constants (Node + edge runtimes)
+ *
+ * This file must stay free of Node-only builtins (`fs`, `path`, `os`, etc.)
+ * so it can be reused by Cloudflare Workers.
+ */
+
+/**
+ * Generate a runtime-specific User-Agent string.
+ * @returns {string}
+ */
+function getPlatformUserAgent() {
+    const version = '1.11.5';
+
+    // Node
+    if (typeof process !== 'undefined' && process?.platform && process?.arch) {
+        return `antigravity/${version} ${process.platform}/${process.arch}`;
+    }
+
+    // Workers / browsers
+    return `antigravity/${version} worker/unknown`;
+}
+
+// Cloud Code API endpoints (in fallback order)
+const ANTIGRAVITY_ENDPOINT_DAILY = 'https://daily-cloudcode-pa.googleapis.com';
+const ANTIGRAVITY_ENDPOINT_PROD = 'https://cloudcode-pa.googleapis.com';
+
+// Endpoint fallback order (daily → prod)
+export const ANTIGRAVITY_ENDPOINT_FALLBACKS = [
+    ANTIGRAVITY_ENDPOINT_DAILY,
+    ANTIGRAVITY_ENDPOINT_PROD
+];
+
+// Required headers for Antigravity API requests
+export const ANTIGRAVITY_HEADERS = {
+    'User-Agent': getPlatformUserAgent(),
+    'X-Goog-Api-Client': 'google-cloud-sdk vscode_cloudshelleditor/0.1',
+    'Client-Metadata': JSON.stringify({
+        ideType: 'IDE_UNSPECIFIED',
+        platform: 'PLATFORM_UNSPECIFIED',
+        pluginType: 'GEMINI'
+    })
+};
+
+// Default project ID if none can be discovered
+export const DEFAULT_PROJECT_ID = 'rising-fact-p41fc';
+
+export const TOKEN_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+export const REQUEST_BODY_LIMIT = '50mb';
+export const ANTIGRAVITY_AUTH_PORT = 9092;
+export const DEFAULT_PORT = 48123;
+
+export const DEFAULT_COOLDOWN_MS = 60 * 1000; // 1 minute default cooldown
+export const MAX_RETRIES = 5; // Max retry attempts across accounts
+export const MAX_ACCOUNTS = 10; // Maximum number of accounts allowed
+
+// Rate limit wait thresholds
+export const MAX_WAIT_BEFORE_ERROR_MS = 120000; // 2 minutes - throw error if wait exceeds this
+
+// Thinking model constants
+export const MIN_SIGNATURE_LENGTH = 50; // Minimum valid thinking signature length
+
+// Gemini-specific limits
+export const GEMINI_MAX_OUTPUT_TOKENS = 16384;
+
+// Gemini signature handling
+// Sentinel value to skip thought signature validation when Claude Code strips the field
+// See: https://ai.google.dev/gemini-api/docs/thought-signatures
+export const GEMINI_SKIP_SIGNATURE = 'skip_thought_signature_validator';
+
+// Cache TTL for Gemini thoughtSignatures (2 hours)
+export const GEMINI_SIGNATURE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Get the model family from model name (dynamic detection, no hardcoded list).
+ * @param {string} modelName - The model name from the request
+ * @returns {'claude' | 'gemini' | 'unknown'} The model family
+ */
+export function getModelFamily(modelName) {
+    const lower = (modelName || '').toLowerCase();
+    if (lower.includes('claude')) return 'claude';
+    if (lower.includes('gemini')) return 'gemini';
+    return 'unknown';
+}
+
+/**
+ * Check if a model supports thinking/reasoning output.
+ * @param {string} modelName - The model name from the request
+ * @returns {boolean} True if the model supports thinking blocks
+ */
+export function isThinkingModel(modelName) {
+    const lower = (modelName || '').toLowerCase();
+    // Claude thinking models have "thinking" in the name
+    if (lower.includes('claude') && lower.includes('thinking')) return true;
+    // Gemini thinking models: explicit "thinking" in name, OR gemini version 3+
+    if (lower.includes('gemini')) {
+        if (lower.includes('thinking')) return true;
+        // Check for gemini-3 or higher (e.g., gemini-3, gemini-3.5, gemini-4, etc.)
+        const versionMatch = lower.match(/gemini-(\d+)/);
+        if (versionMatch && parseInt(versionMatch[1], 10) >= 3) return true;
+    }
+    return false;
+}
+
+// Google OAuth configuration (from opencode-antigravity-auth)
+const oauthClientId = (typeof process !== 'undefined' && process?.env?.OAUTH_CLIENT_ID)
+    ? process.env.OAUTH_CLIENT_ID
+    : 'YOUR_OAUTH_CLIENT_ID';
+
+const oauthClientSecret = (typeof process !== 'undefined' && process?.env?.OAUTH_CLIENT_SECRET)
+    ? process.env.OAUTH_CLIENT_SECRET
+    : 'YOUR_OAUTH_CLIENT_SECRET';
+
+const oauthCallbackPort = (typeof process !== 'undefined' && process?.env?.OAUTH_CALLBACK_PORT)
+    ? parseInt(process.env.OAUTH_CALLBACK_PORT, 10)
+    : 51121;
+
+export const OAUTH_CONFIG = {
+    clientId: oauthClientId,
+    clientSecret: oauthClientSecret,
+    authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userInfoUrl: 'https://www.googleapis.com/oauth2/v1/userinfo',
+    callbackPort: oauthCallbackPort,
+    scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/cclog',
+        'https://www.googleapis.com/auth/experimentsandconfigs'
+    ]
+};
+
+export const OAUTH_REDIRECT_URI = `http://localhost:${OAUTH_CONFIG.callbackPort}/oauth-callback`;
+
+// Minimal Antigravity system instruction (from CLIProxyAPI)
+// Only includes the essential identity portion to reduce token usage and improve response quality
+// Reference: GitHub issue #76, CLIProxyAPI, gcli2api
+export const ANTIGRAVITY_SYSTEM_INSTRUCTION = `You are Antigravity, a powerful agentic AI coding assistant designed by the Google Deepmind team working on Advanced Agentic Coding.You are pair programming with a USER to solve their coding task. The task may require creating a new codebase, modifying or debugging an existing codebase, or simply answering a question.**Absolute paths only****Proactiveness**`;
+
+// Model fallback mapping - maps primary model to fallback when quota exhausted
+export const MODEL_FALLBACK_MAP = {
+    'gemini-3-pro-high': 'claude-opus-4-5-thinking',
+    'gemini-3-pro-low': 'claude-sonnet-4-5',
+    'gemini-3-flash': 'claude-sonnet-4-5-thinking',
+    'claude-opus-4-5-thinking': 'gemini-3-pro-high',
+    'claude-sonnet-4-5-thinking': 'gemini-3-flash',
+    'claude-sonnet-4-5': 'gemini-3-flash'
+};
+
+export default {
+    ANTIGRAVITY_ENDPOINT_FALLBACKS,
+    ANTIGRAVITY_HEADERS,
+    ANTIGRAVITY_SYSTEM_INSTRUCTION,
+    DEFAULT_PROJECT_ID,
+    TOKEN_REFRESH_INTERVAL_MS,
+    REQUEST_BODY_LIMIT,
+    ANTIGRAVITY_AUTH_PORT,
+    DEFAULT_PORT,
+    DEFAULT_COOLDOWN_MS,
+    MAX_RETRIES,
+    MAX_ACCOUNTS,
+    MAX_WAIT_BEFORE_ERROR_MS,
+    MIN_SIGNATURE_LENGTH,
+    GEMINI_MAX_OUTPUT_TOKENS,
+    GEMINI_SKIP_SIGNATURE,
+    GEMINI_SIGNATURE_CACHE_TTL_MS,
+    getModelFamily,
+    isThinkingModel,
+    OAUTH_CONFIG,
+    OAUTH_REDIRECT_URI,
+    MODEL_FALLBACK_MAP
+};
